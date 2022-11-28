@@ -91,8 +91,9 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
     im_obj = ax.imshow(images[0])
 
     def animate(idx):
-        image = images[idx]
-        im_obj.set_data(image)
+        if idx<len(images):
+            image = images[idx]
+            im_obj.set_data(image)
         
     anim = animation.FuncAnimation(f, animate, frames=198)
     anim.save(output_path, fps=5, dpi=300)
