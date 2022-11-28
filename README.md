@@ -98,13 +98,18 @@ A new config file has been created, `pipeline_new.config`.
 
 You will now launch your very first experiment with the Tensorflow object detection API. Move the `pipeline_new.config` to the `/home/workspace/experiments/reference` folder. Now launch the training process:
 * a training process:
+
 ```
 python experiments/model_main_tf2.py --model_dir=experiments/reference/ --pipeline_config_path=experiments/reference/pipeline_new.config
+```
+
+```
+python experiments/model_main_tf2.py --model_dir=experiments/experiment1/ --pipeline_config_path=experiments/experiment1/pipeline_new.config
 ```
 Once the training is finished, launch the evaluation process:
 * an evaluation process:
 ```
-python experiments/model_main_tf2.py --model_dir=experiments/reference/ --pipeline_config_path=experiments/reference/pipeline_new.config --checkpoint_dir=experiments/reference/
+python experiments/model_main_tf2.py --model_dir=experiments/experiment1/ --pipeline_config_path=experiments/experiment1/pipeline_new.config --checkpoint_dir=experiments/experiment1/
 ```
 
 **Note**: Both processes will display some Tensorflow warnings, which can be ignored. You may have to kill the evaluation script manually using
