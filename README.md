@@ -16,6 +16,8 @@ For this project, we will be using data from the [Waymo Open dataset](https://wa
 
 ### Project Structure
 
+The project was done in a virtual workspace with a GPU. The required python libraries can be found in the ``` requirements.txt ``` file.
+
 #### Data
 
 The data you will use for training, validation and testing is organized as follow:
@@ -185,11 +187,13 @@ The distribution of the count of frames per class count underlines this issue. W
 ![](/images/ClassDist.JPG)
 
 ### Cross validation
+
+A total of 99 tfrecord files is used. A split of 0.869, 0.101 and 0.03 is used for the training, testing and validation sets. We use the validation and testing set to check if our model overfits.
+
 Because of the limitations in the workspace, it was not possible to run the training and evaluation process in parallel. Instead we evaluated the performance of the models after the training. The evaluation loss should be close to the training loss, if we want to prevent overfitting.
 
 ## Training
 ### Reference experiment
-This section should detail the results of the reference experiment. It should includes training metrics and a detailed explanation of the algorithm's performances.
 
 The reference model only has a horizontal flip and random crop image option for the data augmentation. What stand out is that the loss accumulated quite high in the befinning before dropping gradually, even tho we are using a pretrained neural network. By the shape of the loss functions it looks like we are improving the model as the loss get minimized.
 
@@ -206,7 +210,7 @@ To sum up the results, we cannot detect anything with this model! The evaluation
 Things that can quickly be improved for this model:
 
 - increase the batch size
-- add more data augmentation to the pipeline, especially to train for night vision
+- add more data augmentation to the pipeline, especially to train for night vision/different weather conditions
 
 ### Improve on the reference
 This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
@@ -218,6 +222,8 @@ For the new pipeline I increased the batch size to 8. And I added the following 
 - random_adjust_saturation 
 - random_distort_color
 - random_black_patches 
+
+The RGB to gray augmentation makes the model robust for day and night vision. We also want to adjust the brightness, as we have a mix of very bright and dark weather conditions. The contrast needs also to be adjusted, as we have different levels across the data. We also adjust the saturation randomly and distort the color to make the model more independent from the color of the objects/environment. To make the model more robust for camera input noise, we add random black patches.
 
 The specifications are taken from [`preprocessor.proto`](https://github.com/tensorflow/models/blob/master/research/object_detection/protos/preprocessor.proto).
 
@@ -235,11 +241,15 @@ If we compare the loss to the reference model we can see that the best loss of t
 
 ![](/images/TBLosses.JPG)
 
-We could improve the mean average precision (mAP) to 0.11, the mAP for large boxes to 0.42, to 0.41 for medium sized boxes and to 0.04 for small sized boxes. The Intersection over Union (IoU) for 50% is 0.21, while the IoU for 75% is 0.10.
+We could improve the mean average precision (mAP) to 0.11, the mAP for large boxes to 0.42, to 0.41 for medium sized boxes and to 0.04 for small sized boxes. The Intersection over Union (IoU) for 0.5 threshold is 0.21, while the IoU for 0.75 threshold is 0.10.
+
+This reveals that the model struggle mostly with small objects and that we still could improve the IoU of our detection capability. The precision for large and medium sized objects with around 0.42 is quite good for such a small training period, but we still need to improve the precision for small objects.
 
 ![](/images/TBDetectionBoxesPrecision.JPG)
 
-The average recall (AR) 1 is 0.027, for AR@10 is 0.11, for AR@100 is 0.16, for AR@100 (large) is 0.54, for AR@100 (medium) is 0.52 for AR@100 (small) is 0.10.
+The average recall (AR) given 1 detection per image is 0.027. The AR given 10 detections per image is 0.11, the AR given 100 detections per image is 0.16 and for AR@100 (large) is 0.54. The AR@100 (medium) is 0.52 and for AR@100 (small) is 0.10.
+
+This results indicate that our model still has a lot of problems to detect all objects/classes in the image. The greater the objects in the image or detections per image are, the better our model.
 
 ![](/images/TBDetectionBoxesRecall.JPG)
 
@@ -259,3 +269,13 @@ We can create an animation of the trained model as explained in the setup. We ca
 ![](/images/animation2.gif)
 
 ![](/images/animation3.gif)
+
+### Final remarks
+
+I am quite happy with the result of my object detection model. Given more resources and time, we could improve our initial results for sure. Things to investigate:
+
+- rebalance the sampling for the training data to tackle the imbalanced dataset
+- finetune the hyperparameters
+- use a different learning rate scheduler
+- investigate more data augmentation methods with different parameters
+- increase the batch size of the pipeline. As indicated in the article: [What's the Optimal Batch Size to Train a Neural Network?](https://wandb.ai/ayush-thakur/dl-question-bank/reports/What-s-the-Optimal-Batch-Size-to-Train-a-Neural-Network---VmlldzoyMDkyNDU) gives some insights on the reasoning behind this claim.
