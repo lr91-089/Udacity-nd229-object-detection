@@ -186,23 +186,55 @@ Because of the limitations in the workspace, it was not possible to run the trai
 ### Reference experiment
 This section should detail the results of the reference experiment. It should includes training metrics and a detailed explanation of the algorithm's performances.
 
+The reference model only has a horizontal flip and random crop image option for the data augmentation. What stand out is that the loss accumulated quite high in the befinning before dropping gradually, even tho we are using a pretrained neural network. By the shape of the loss functions it looks like we are improving the model as the loss get minimized.
+
 ![](/images/TB_reference_loss.JPG)
+
+Checking on the evaluation metrics after 2500 epochs reveals that this model is really bad. All metrics have a value close to zero. Only the Detection Box Recall on large images has a value of around 0.04. Which is still super bad.
 
 ![](/images/TB_reference_precision.JPG)
 
 ![](/images/TB_reference_recall.JPG)
 
+To sum up the results, we cannot detect anything with this model! The evaluation metrics supports this finding. So we need to change things up.
+
+Things that can quickly be improved for this model:
+
+- increase the batch size
+- add more data augmentation to the pipeline, especially to train for night vision
 
 ### Improve on the reference
 This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
 
+For the new pipeline I increased the batch size to 8. And I added the following data augmentations:
+- random_rgb_to_gray
+- random_adjust_brightness 
+- random_adjust_contrast 
+- random_adjust_saturation 
+- random_distort_color
+- random_black_patches 
+
+I increased the total training steps 4000, but the training was interrupted due the limited time on the workspace. So I only trained this model for around 2275 steps before it terminated. Still we could improve the reference model a lot.
+
+What stands out is that we have a higher initial loss for the new model without a large increase. Instead it declines sharply.
+
 ![](/images/TBLossesExp1.JPG)
+
+If we compare the loss to the reference model we can see that the best loss of the reference model is around 0.7, while our new model has a loss of less than 0.15!
 
 ![](/images/TBLosses.JPG)
 
+We could improve the mean average precision (mAP) to 0.11, the mAP for large boxes to 0.42, to 0.41 for medium sized boxes and to 0.04 for small sized boxes. The Intersection over Union (IoU) for 50% is 0.21, while the IoU for 75% is 0.10.
+
 ![](/images/TBDetectionBoxesPrecision.JPG)
 
+The average recall (AR) 1 is 0.027, for AR@10 is 0.11, for AR@100 is 0.16, for AR@100 (large) is 0.54, for AR@100 (medium) is 0.52 for AR@100 (small) is 0.10.
+
 ![](/images/TBDetectionBoxesRecall.JPG)
+
+We can see that the learning rate is almost identical, we only decrease it over 4000 steps in the new model.
+
+The better performance of our model comes to the expense of the computation time. We only manage to calculate 0.45 steps per second on average, while the reference model could perform around 1.3 steps per second.
 
 ![](/images/TBLrSteps.JPG)
 
