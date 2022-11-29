@@ -1,32 +1,32 @@
 # Object Detection in an Urban Environment
 
+## Project overview
+This section should contain a brief description of the project and what we are trying to achieve. Why is object detection such an important component of self driving car systems?
+
 ## Data
 
 For this project, we will be using data from the [Waymo Open dataset](https://waymo.com/open/).
 
 [OPTIONAL] - The files can be downloaded directly from the website as tar files or from the [Google Cloud Bucket](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_2_0_individual_files/) as individual tf records. We have already provided the data required to finish this project in the workspace, so you don't need to download it separately.
 
-## Structure
+## Set up
 
-### Data
+### Project Structure
+
+#### Data
 
 The data you will use for training, validation and testing is organized as follow:
 ```
-/home/workspace/data/waymo
-	- training_and_validation - contains 97 files to train and validate your models
-    - train: contain the train data (empty to start)
-    - val: contain the val data (empty to start)
+/home/workspace/data/
+    - train: contain the train data (86 tfrecord files)
+    - val: contain the val data (10 tfrecord files)
     - test - contains 3 files to test your model and create inference videos
 ```
-The `training_and_validation` folder contains file that have been downsampled: we have selected one every 10 frames from 10 fps videos. The `testing` folder contains frames from the 10 fps video without downsampling.
 
-You will split this `training_and_validation` data into `train`, and `val` sets by completing and executing the `create_splits.py` file.
-
-
-### Experiments
+#### Experiments
 The experiments folder will be organized as follow:
 ```
-experiments/
+/home/workspace/experiments/
     - pretrained_model/
     - exporter_main_v2.py - to create an inference model
     - model_main_tf2.py - to launch training
@@ -40,13 +40,15 @@ experiments/
 
 ## Prerequisites
 
-### Local Setup
+### Local Setup [OPTIONAL] 
+
+You can directly pull the initial git project from here: https://github.com/udacity/nd013-c1-vision-starter and follow the instructions there.
 
 For local setup if you have your own Nvidia GPU, you can use the provided Dockerfile and requirements in the [build directory](./build).
 
 Follow [the README therein](./build/README.md) to create a docker container and install all prerequisites.
 
-### Download and process the data
+### Download and process the data [OPTIONAL] 
 
 **Note:** ”If you are using the classroom workspace, we have already completed the steps in the section for you. You can find the downloaded and processed files within the `/home/workspace/data/preprocessed_data/` directory. Check this out then proceed to the **Exploratory Data Analysis** part.
 
@@ -108,8 +110,8 @@ python experiments/model_main_tf2.py --model_dir=experiments/reference/ --pipeli
 ```
 python experiments/model_main_tf2.py --model_dir=experiments/experiment1/ --pipeline_config_path=experiments/experiment1/pipeline_new.config
 ```
-Once the training is finished, launch the evaluation process:
-* an evaluation process:
+Once the training is finished, launch the evaluation process. Launching evaluation process in parallel with training process will lead to OOM error in the workspace:
+* an evaluation process (for the pipeline with augmentation):
 ```
 python experiments/model_main_tf2.py --model_dir=experiments/experiment1/ --pipeline_config_path=experiments/experiment1/pipeline_new.config --checkpoint_dir=experiments/experiment1/
 ```
@@ -118,7 +120,7 @@ python experiments/model_main_tf2.py --model_dir=experiments/experiment1/ --pipe
 `CTRL+C`.
 
 To monitor the training, you can launch a tensorboard instance by running
-`npython -m tensorboard.main --logdir experiments/reference/`. You will report your findings in the writeup.
+`npython -m tensorboard.main --logdir experiments/reference/`. 
 
 ### Improve the performances
 
@@ -146,23 +148,71 @@ Finally, you can create a video of your model's inferences for any tf record fil
 python inference_video.py --labelmap_path label_map.pbtxt --model_path experiments/experiment1/exported/saved_model --tf_record_path data/test/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord --config_path experiments/experiment1/pipeline_new.config --output_path experiments/experiment1/animation3.gif
 ```
 
-## Submission Template
+## Dataset
+### Dataset analysis
+Each tfrecord files contains frames, captured by a camera. We can iterate over the data and query a lot of information. Each frames contans the following labels: 
 
-### Project overview
-This section should contain a brief description of the project and what we are trying to achieve. Why is object detection such an important component of self driving car systems?
+- 'image'
+- 'source_id'
+- 'key'
+- 'filename'
+- 'groundtruth_image_confidences'
+- 'groundtruth_verified_neg_classes'
+- 'groundtruth_not_exhaustive_classes'
+- 'groundtruth_boxes'
+- 'groundtruth_area'
+- 'groundtruth_is_crowd'
+- 'groundtruth_difficult'
+- 'groundtruth_group_of'
+- 'groundtruth_weights'
+- 'groundtruth_classes'
+- 'groundtruth_image_classes'
+- 'original_image_spatial_shape'
 
-### Set up
-This section should contain a brief description of the steps to follow to run the code for this repository.
+We can visualikze the frame as shown here and with the additional information we can plot the groundtruth boxes, which label our objects in the image.
 
-### Dataset
-#### Dataset analysis
-This section should contain a quantitative and qualitative description of the dataset. It should include images, charts and other visualizations.
-#### Cross validation
-This section should detail the cross validation strategy and justify your approach.
+To get an initial overview on the data I checked how often each class appeared in 30000 sampled frames. We can see that vehicles appeared 519214 times, pedestrians 146336 times and cyclists 3730 times. This is an issue for the training, because the data set is highly imbalanced. This will lead to a better learning of the vehicle class compared to the other classes. 
 
-### Training
-#### Reference experiment
+![Count of each class in 30000 frames.](/images/ClassCount.JPG)
+
+The distribution of the count of frames per class count underlines this issue. While the pedestrians and cyclists have the highest number of frames without an appearance, the vehicle distribution shows a different picture. Here we have only a small amount of frames without any vehicles. It is also notable that the range of values differs. While we have at most 5 cyclists in a frame, we have more than 60 vehicles and more than 40 pedestrians in some frames.
+
+![](/images/ClassDist.JPG)
+
+### Cross validation
+Because of the limitations in the workspace, it was not possible to run the training and evaluation process in parallel. Instead we evaluated the performance of the models after the training. The evaluation loss should be close to the training loss, if we want to prevent overfitting.
+
+## Training
+### Reference experiment
 This section should detail the results of the reference experiment. It should includes training metrics and a detailed explanation of the algorithm's performances.
 
-#### Improve on the reference
+![](/images/TB_reference_loss.JPG)
+
+![](/images/TB_reference_precision.JPG)
+
+![](/images/TB_reference_recall.JPG)
+
+
+### Improve on the reference
 This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
+
+![](/images/TBLossesExp1.JPG)
+
+![](/images/TBLosses.JPG)
+
+![](/images/TBDetectionBoxesPrecision.JPG)
+
+![](/images/TBDetectionBoxesRecall.JPG)
+
+![](/images/TBLrSteps.JPG)
+
+
+### Visualization of the result model
+
+We can create an animation of the trained model as explained in the setup.
+
+![](/images/animation1.gif)
+
+![](/images/animation2.gif)
+
+![](/images/animation3.gif)
