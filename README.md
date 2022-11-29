@@ -1,7 +1,10 @@
 # Object Detection in an Urban Environment
 
 ## Project overview
-This section should contain a brief description of the project and what we are trying to achieve. Why is object detection such an important component of self driving car systems?
+
+This project shows that we can use transferlearning in tensorflow to train a convolutional neural network on a new dataset to detect objects.
+Object detection is very important for innovative technologies like autonomous cars. To fully understand a dynamic environment it is super important to detect and classify all objects in the visual input. Without this capability we cannot naviagte in complex environment like the traffic in an urban environment. We want to train a neural network to detect cars/vehicles, pedestrians and cyclists.
+We will especially highlight the need of data augmentation for the training of such a neural network. 
 
 ## Data
 
@@ -169,7 +172,9 @@ Each tfrecord files contains frames, captured by a camera. We can iterate over t
 - 'groundtruth_image_classes'
 - 'original_image_spatial_shape'
 
-We can visualikze the frame as shown here and with the additional information we can plot the groundtruth boxes, which label our objects in the image.
+We can visualize the frame as shown here and with the additional information we can plot the groundtruth boxes, which label our objects in the image.
+
+![](/images/imagesDataSet.JPG)
 
 To get an initial overview on the data I checked how often each class appeared in 30000 sampled frames. We can see that vehicles appeared 519214 times, pedestrians 146336 times and cyclists 3730 times. This is an issue for the training, because the data set is highly imbalanced. This will lead to a better learning of the vehicle class compared to the other classes. 
 
@@ -214,7 +219,13 @@ For the new pipeline I increased the batch size to 8. And I added the following 
 - random_distort_color
 - random_black_patches 
 
-I increased the total training steps 4000, but the training was interrupted due the limited time on the workspace. So I only trained this model for around 2275 steps before it terminated. Still we could improve the reference model a lot.
+The specifications are taken from [`preprocessor.proto`](https://github.com/tensorflow/models/blob/master/research/object_detection/protos/preprocessor.proto).
+
+An example of the augmented input can be seen here:
+
+![](/images/dataAugmentation.JPG)
+
+I increased the total training steps to 4000, but the training was interrupted due the limited time on the workspace. So I only trained this model for around 2275 steps before it terminated. Still we could improve the reference model a lot.
 
 What stands out is that we have a higher initial loss for the new model without a large increase. Instead it declines sharply.
 
@@ -232,7 +243,7 @@ The average recall (AR) 1 is 0.027, for AR@10 is 0.11, for AR@100 is 0.16, for A
 
 ![](/images/TBDetectionBoxesRecall.JPG)
 
-We can see that the learning rate is almost identical, we only decrease it over 4000 steps in the new model.
+We can see that the learning rate is identical, we only decrease it over 4000 instead of 2500 steps for the new model.
 
 The better performance of our model comes to the expense of the computation time. We only manage to calculate 0.45 steps per second on average, while the reference model could perform around 1.3 steps per second.
 
@@ -241,7 +252,7 @@ The better performance of our model comes to the expense of the computation time
 
 ### Visualization of the result model
 
-We can create an animation of the trained model as explained in the setup.
+We can create an animation of the trained model as explained in the setup. We can see that the model needs some time before it can detect moving objects, especially at night. We also see that is does not detect every object, especially if it is partly behind some other object.
 
 ![](/images/animation1.gif)
 
